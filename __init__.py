@@ -7,4 +7,4 @@ from . import purchase
 def register():
     Pool.register(
         purchase.Purchase,
-        module='puchase_draft', type_='model')
+        module='purchase_draft', type_='model')
