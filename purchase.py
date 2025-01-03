@@ -22,11 +22,10 @@ class Purchase(metaclass=PoolMeta):
 
     def get_allow_draft(self, name):
         if (self.state in ('draft', 'done')
-                or any([m for line in self.lines for m in line.moves
+                or any([m for m in self.moves
                         if m.state not in ('draft', 'cancelled')])
-                or any([x for line in self.lines for x in line.invoice_lines
-                        if x.invoice and x.invoice.state not in (
-                            'draft', 'cancelled')])):
+                or any([i for i in self.invoices
+                        if i.state not in ('draft', 'cancelled')])):
             return False
         return True
 
@@ -46,9 +45,13 @@ class Purchase(metaclass=PoolMeta):
         shipment_return = []
         invoices = []
         invoice_lines = []
+        # purchase module does not prevent a purchase to be moved to
+        # draft state so we do it here by calling super() when allowed only
+        to_draft = []
         for purchase in purchases:
             if not purchase.allow_draft:
                 continue
+            to_draft.append(purchase)
             moves += [m for line in purchase.lines for m in line.moves]
             shipments += purchase.shipments
             shipment_return += purchase.shipment_returns
@@ -72,4 +75,4 @@ class Purchase(metaclass=PoolMeta):
             ShipmentReturn.delete(shipment_return)
             InvoiceLine.delete(invoice_lines)
             Invoice.delete(invoices)
-        super().draft(purchases)
+        super().draft(to_draft)
